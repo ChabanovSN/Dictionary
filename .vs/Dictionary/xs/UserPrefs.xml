@@ -1,0 +1,17 @@
+﻿<Properties StartupConfiguration="{89F6A1A9-FE6C-4FB3-8FE0-917D5A824734}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Dictionary/TranslationWindow.cs">
+    <Files>
+      <File FileName="Dictionary/Program.cs" Line="13" Column="43" />
+      <File FileName="Dictionary/WainWindow.cs" Line="48" Column="40" />
+      <File FileName="Dictionary/DBHilper.cs" Line="49" Column="51" />
+      <File FileName="Dictionary/TranslationWindow.cs" Line="136" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.ItemProperties.Dictionary PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug|x86" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>
