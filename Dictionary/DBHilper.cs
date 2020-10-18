@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using Microsoft.Data.Sqlite;
 
@@ -12,20 +13,24 @@ namespace Dictionary
         static string cs = "Data Source=dictionary.db";
         static DBHilper()
         {
-
-            if (!File.Exists("dictionary.db"))
-            {
-                Console.WriteLine("Please, create DB and  tables ");
-                return;
-            }
             try
             {
+                if (!File.Exists("dictionary.db"))
+                {
+                    connection = new SqliteConnection(cs);
+                    connection.Open();
+                    command = connection.CreateCommand();
+                    CreateCommonTable();
+                }
+                else
+                {
 
-                connection = new SqliteConnection(cs);
-                connection.Open();
-                command = connection.CreateCommand();
-                Console.WriteLine(connection.ServerVersion);
 
+                    connection = new SqliteConnection(cs);
+                    connection.Open();
+                    command = connection.CreateCommand();
+                    Console.WriteLine(connection.ServerVersion);
+                }
             }
             catch(Exception e) {
                 Console.WriteLine("Ошибка подключения "+e.Message);
@@ -59,17 +64,22 @@ namespace Dictionary
             string idFrom = "id_" + fromTable;
             string idTo = "id_" + toTable;
             command.CommandText = $"select t.word from {fromTable} as f,{toTable} as t,{midTable} as m" +
-            	$" where f.id=m.{idFrom} AND t.id =m.{idTo} ;";                      //    command.Parameters.AddWithValue("$id",1);
-          
-            using (var reader = command.ExecuteReader())
+            	$" where f.id=m.{idFrom} AND t.id =m.{idTo} AND f.word = '{word}' COLLATE NOCASE;";
+            try
             {
-                while (reader.Read())
+                using (var reader = command.ExecuteReader())
                 {
+                    while (reader.Read())
+                    {
 
-                     translation = reader.GetString(0);                   
-                    Console.WriteLine($" GetListTranslaters(), { translation} !");
-                    list.Add(translation);
+                        translation = reader.GetString(0);
+                        Console.WriteLine($" GetListTranslaters(), { translation} !");
+                        list.Add(translation);
+                    }
                 }
+            }catch(Exception e) {
+                Console.WriteLine($"  GetListTranslaters {e.Message}");
+            
             }
 
             return list;
@@ -78,68 +88,154 @@ namespace Dictionary
         static public Table GetTable(int id)
         {
             Table table = new Table();
-            command.CommandText = $"select id, fromName, toName, fromTable, toTable, midTable from CommonTable where id=$id;";                      //    command.Parameters.AddWithValue("$id",1);
-            command.Parameters.AddWithValue("$id", id);
-
-            using (var reader = command.ExecuteReader())
+            try
             {
-                while (reader.Read())
-                {
-                    table.id = reader.GetInt32(0);
-                    table.fromName = reader.GetString(1);
-                    table.toName = reader.GetString(2);
-                    table.fromTable = reader.GetString(3);
-                    table.toTable = reader.GetString(4);
-                    table.midTable = reader.GetString(5);
-                    Console.WriteLine($"GetTable(int id), { table} !");
+               
+                command.CommandText = $"select id, fromName, toName, fromTable, toTable, midTable from CommonTable where id = {id} COLLATE NOCASE;";                      //    command.Parameters.AddWithValue("$id",1);
+                                                                                                                                                                          // command.Parameters.AddWithValue("$id", id);
 
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        table.id = reader.GetInt32(0);
+                        table.fromName = reader.GetString(1);
+                        table.toName = reader.GetString(2);
+                        table.fromTable = reader.GetString(3);
+                        table.toTable = reader.GetString(4);
+                        table.midTable = reader.GetString(5);
+                        Console.WriteLine($"GetTable(int id), { table} !");
+
+                    }
                 }
+              
+            }catch(Exception e) {
+                Console.WriteLine(e.Message);
+               
+
             }
             return table;
 
         }
 
-        static string createEnglishTable = "BEGIN;" +
-            "CREATE  TABLE IF NOT EXISTS EnglishToRussian (" +
-            " id integer primary key autoincrement, word text UNIQUE);" +
-            "COMMIT;";
-        static string creatRussianTable = "CREATE  TABLE IF NOT EXISTS RussianToEnglish (" +
-            " id integer primary key autoincrement, word text UNIQUE)";
-        static string createMidEnglishRussian = "CREATE  TABLE IF NOT EXISTS MidEnglishRussian (" +
-          // "id integer primary key autoincrement," +
-          "id_EnglishToRussian  INTEGER," +
-          "id_RussianToEnglish  INTEGER," +
-            "CONSTRAINT new_pk PRIMARY KEY (id_EnglishToRussian, id_RussianToEnglish)" +
-          ");";
-        static string insertEnglish = "INSERT INTO EnglishToRussian(word) VALUES('Help');";
-        static string insertRussian = "INSERT INTO RussianToEnglish(word) VALUES('Спасение');";
 
 
-        static string CommonTable = "CREATE  TABLE IF NOT EXISTS CommonTable(id integer primary key autoincrement, " +
-              "fromName text," +
-           "toName text," +
-                   "fromTable text," +
-           "toTable text," +
-           "midTable text)";
-        static string insertCom = "INSERT INTO CommonTable(fromName,toName,fromTable,toTable,midTable)" +
-            " VALUES('English','Русский','EnglishToRussian','RussianToEnglish','MidEnglishRussian')";
 
-      
+
+        public static void CreateCommonTable() {
+            try
+            {
+                string CommonTable = "CREATE  TABLE IF NOT EXISTS CommonTable(id integer primary key autoincrement, " +
+                      "fromName text," +
+                   "toName text," +
+                           "fromTable text," +
+                   "toTable text," +
+                   "midTable text)";
+                command.CommandText = CommonTable;
+                command.ExecuteNonQuery();
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+        }
+     
+        public static void CreateNewDictionary(string fromName, string toName, string fromTable, string toTable, string midTable)
+        {
+            try
+            {
+                int idPair = CheckTable(fromName, toName);
+                if (idPair != 0) return;
+
+                int idFromTable = CheckTable(fromName, null);
+
+                if (idFromTable == 0)
+                        CreateNewTable(fromTable);
+                int idToTable = CheckTable(null, toName);
+                if (idToTable == 0)
+                        CreateNewTable(toTable);
+
+                string idFrom = "id_" + fromTable;
+                string idTo = "id_" + toTable;
+                string createMid = $"CREATE  TABLE IF NOT EXISTS {midTable} (" +      
+                                   $"{idFrom}  INTEGER," +
+                                   $"{idTo}   INTEGER," +
+                                   $"CONSTRAINT new_pk PRIMARY KEY ({idFrom}, {idTo})" +
+                                                                             ");";
+
+                command.CommandText = createMid;
+                command.ExecuteNonQuery();
+                string insertComTable = $"INSERT INTO CommonTable(fromName,toName,fromTable,toTable,midTable)" +
+                                        $" VALUES('{fromName}','{toName}','{fromTable}','{toTable}','{midTable}')";
+                command.CommandText = insertComTable;
+                command.ExecuteNonQuery();
+            }
+            catch(Exception e)
+            {
+
+                Console.WriteLine(e.Message);
+            }
+
+
+
+        }
+
+        static void CreateNewTable(string table){
+            command.CommandText = $"BEGIN;" +
+              $"CREATE  TABLE IF NOT EXISTS {table} (" +
+              " id integer primary key autoincrement, word text UNIQUE);" +
+              "COMMIT;";
+          
+            command.ExecuteNonQuery();
+
+        }
+
+        static int CheckTable(string fromName, string toName) {
+            int id = 0;
+            try
+            {
+                if(fromName !=null && toName ==null)
+                command.CommandText = $"select id from CommonTable where fromName = '{fromName}' COLLATE NOCASE;";
+                if (fromName == null && toName != null)
+                    command.CommandText = $"select id from CommonTable where toName = '{toName}' COLLATE NOCASE;";                     //    command.Parameters.AddWithValue("$id",1);
+                if (fromName != null && toName != null)
+                    command.CommandText = $"select id from CommonTable where fromName = '{fromName}' AND toName = '{toName}'  COLLATE NOCASE;";                                                                                                               // command.Parameters.AddWithValue("$id", id);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                       id = reader.GetInt32(0);                       
+                    }
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+
+
+            }
+            return id;
+        
+        }
+
 
         public static bool Insert(string fromTable, string toTable, string midTable, string word, string translate)
         {
-
-            int idFromTable = GetWordFromTable(fromTable, word);
+            try
+            {
+                int idFromTable = GetWordFromTable(fromTable, word);
             int idToTable = GetWordFromTable(toTable, translate);
 
-            Console.WriteLine($"result 2 table, { idFromTable}   {idToTable}  !");
-
+            Console.WriteLine($"insert id, { idFromTable}   {idToTable}  !");
+            Console.WriteLine($"insert, {word}   {translate}  !");
             string idFrom = "id_" + fromTable;
             string idTo = "id_" + toTable;
             command.CommandText = $"INSERT INTO {midTable}({idFrom},{idTo}) VALUES({idFromTable},{idToTable})";
 
-            try
-            {
+
                 command.ExecuteNonQuery();
                 return true;
             }
@@ -148,7 +244,29 @@ namespace Dictionary
               }
         }
 
-        static int InsertInTable(string table, string word)
+        public static bool Delete(string fromTable, string toTable, string midTable, string word, string translate)
+        {
+            try
+            {
+                int idFromTable = GetWordFromTable(fromTable, word);
+            int idToTable = GetWordFromTable(toTable, translate);
+
+            Console.WriteLine($"!!! { idFromTable}  {idToTable} ");
+
+            string idFrom = "id_" + fromTable;
+            string idTo = "id_" + toTable;
+            command.CommandText = $"DELETE FROM {midTable} where {idFrom}='{idFromTable}' AND {idTo} = '{idToTable}';";
+
+
+                command.ExecuteNonQuery();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        public static int InsertInFROMTable(string table, string word)
         {
             command.CommandText = $"insert into {table} (word) values('{word}');";
             if (command.ExecuteNonQuery() > 0)
@@ -159,7 +277,7 @@ namespace Dictionary
         {
             int idFromTable = 0;
             // SqliteCommand command = connection.CreateCommand();
-            command.CommandText = $"select id from {table} where word ='{word}' ;";
+            command.CommandText = $"select id from {table} where word ='{word}' COLLATE NOCASE;";
             using (var reader = command.ExecuteReader())
             {
                 while (reader.Read())
@@ -170,7 +288,7 @@ namespace Dictionary
                 }
             }
             if (idFromTable == 0)
-                return InsertInTable(table, word);
+                return InsertInFROMTable(table, word);
             return idFromTable;
         }
 
