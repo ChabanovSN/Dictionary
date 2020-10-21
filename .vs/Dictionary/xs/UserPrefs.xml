@@ -1,11 +1,23 @@
 ﻿<Properties StartupConfiguration="{89F6A1A9-FE6C-4FB3-8FE0-917D5A824734}|Default">
-  <MonoDevelop.Ide.Workbench ActiveDocument="Dictionary/TranslationWindow.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Состояние: Dictionary">
     <Files>
-      <File FileName="Dictionary/Program.cs" Line="13" Column="43" />
-      <File FileName="Dictionary/WainWindow.cs" Line="48" Column="40" />
-      <File FileName="Dictionary/DBHilper.cs" Line="49" Column="51" />
-      <File FileName="Dictionary/TranslationWindow.cs" Line="19" Column="4" />
+      <File FileName="Dictionary/Program.cs" Line="5" Column="18" />
+      <File FileName="Dictionary/MainWindow.cs" Line="109" Column="16" />
+      <File FileName="Dictionary/DBHilper.cs" Line="28" Column="18" />
+      <File FileName="Dictionary/TranslationWindow.cs" Line="159" Column="14" />
+      <File FileName="Состояние: Dictionary" />
     </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="Dictionary" expanded="True">
+            <Node name="Dictionary" expanded="True">
+              <Node name="MainWindow.cs" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.ItemProperties.Dictionary PreferredExecutionTarget="MonoDevelop.Default" />
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />

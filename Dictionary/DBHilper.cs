@@ -10,7 +10,7 @@ namespace Dictionary
     {
         static SqliteConnection connection;
         static SqliteCommand command;
-        static string cs = "Data Source=dictionary.db";
+        private static readonly string cs = "Data Source=dictionary.db";
         static DBHilper()
         {
             try
@@ -25,11 +25,11 @@ namespace Dictionary
                 else
                 {
 
-
+                 
                     connection = new SqliteConnection(cs);
                     connection.Open();
                     command = connection.CreateCommand();
-                    Console.WriteLine(connection.ServerVersion);
+                   
                 }
             }
             catch(Exception e) {
@@ -41,9 +41,8 @@ namespace Dictionary
         {
             Dictionary<string, int> pairs = new Dictionary<string, int>();
 
-            command.CommandText = $"select id, fromName, toName from CommonTable;";                      //    command.Parameters.AddWithValue("$id",1);
-
-           
+            command.CommandText = $"select id, fromName, toName from CommonTable;";                     
+              
             using (var reader = command.ExecuteReader())
             {
                 while (reader.Read())
@@ -51,8 +50,7 @@ namespace Dictionary
                    int id = reader.GetInt32(0);
                    string  fromName = reader.GetString(1);
                    string toName = reader.GetString(2);
-                    string midName = fromName + "-" + toName;
-                    Console.WriteLine($"CommonTable, { id}   {fromName} {toName} {midName} !");
+                    string midName = fromName + "-" + toName;                
                     pairs[midName] = id;
                 }
             }
@@ -73,7 +71,6 @@ namespace Dictionary
                     {
 
                         translation = reader.GetString(0);
-                        Console.WriteLine($" GetListTranslaters(), { translation} !");
                         list.Add(translation);
                     }
                 }
@@ -92,7 +89,7 @@ namespace Dictionary
             {
                
                 command.CommandText = $"select id, fromName, toName, fromTable, toTable, midTable from CommonTable where id = {id} COLLATE NOCASE;";                      //    command.Parameters.AddWithValue("$id",1);
-                                                                                                                                                                          // command.Parameters.AddWithValue("$id", id);
+                                                                                                                                                                    // command.Parameters.AddWithValue("$id", id);
 
                 using (var reader = command.ExecuteReader())
                 {
@@ -103,8 +100,7 @@ namespace Dictionary
                         table.toName = reader.GetString(2);
                         table.fromTable = reader.GetString(3);
                         table.toTable = reader.GetString(4);
-                        table.midTable = reader.GetString(5);
-                        Console.WriteLine($"GetTable(int id), { table} !");
+                        table.midTable = reader.GetString(5);                       
 
                     }
                 }
@@ -196,7 +192,7 @@ namespace Dictionary
             try
             {
                 if(fromName !=null && toName ==null)
-                command.CommandText = $"select id from CommonTable where fromName = '{fromName}' COLLATE NOCASE;";
+                     command.CommandText = $"select id from CommonTable where fromName = '{fromName}' COLLATE NOCASE;";
                 if (fromName == null && toName != null)
                     command.CommandText = $"select id from CommonTable where toName = '{toName}' COLLATE NOCASE;";                     //    command.Parameters.AddWithValue("$id",1);
                 if (fromName != null && toName != null)
@@ -227,14 +223,11 @@ namespace Dictionary
             try
             {
                 int idFromTable = GetWordFromTable(fromTable, word);
-            int idToTable = GetWordFromTable(toTable, translate);
+                int idToTable = GetWordFromTable(toTable, translate);
 
-            Console.WriteLine($"insert id, { idFromTable}   {idToTable}  !");
-            Console.WriteLine($"insert, {word}   {translate}  !");
             string idFrom = "id_" + fromTable;
             string idTo = "id_" + toTable;
             command.CommandText = $"INSERT INTO {midTable}({idFrom},{idTo}) VALUES({idFromTable},{idToTable})";
-
 
                 command.ExecuteNonQuery();
                 return true;
@@ -249,14 +242,28 @@ namespace Dictionary
             try
             {
                 int idFromTable = GetWordFromTable(fromTable, word);
-            int idToTable = GetWordFromTable(toTable, translate);
-
-            Console.WriteLine($"!!! { idFromTable}  {idToTable} ");
+                int idToTable = GetWordFromTable(toTable, translate);
 
             string idFrom = "id_" + fromTable;
             string idTo = "id_" + toTable;
             command.CommandText = $"DELETE FROM {midTable} where {idFrom}='{idFromTable}' AND {idTo} = '{idToTable}';";
 
+                command.ExecuteNonQuery();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        public static bool Delete(string fromTable, string toTable, string midTable, string word)
+        {
+            try
+            {
+                int idFromTable = GetWordFromTable(fromTable, word);            
+
+                string idFrom = "id_" + fromTable;          
+                command.CommandText = $"DELETE FROM {midTable} where {idFrom}='{idFromTable}';";
 
                 command.ExecuteNonQuery();
                 return true;
@@ -271,12 +278,11 @@ namespace Dictionary
             command.CommandText = $"insert into {table} (word) values('{word}');";
             if (command.ExecuteNonQuery() > 0)
                 return GetWordFromTable(table, word);
-            else return 0;
+             return 0;
         }
         static int GetWordFromTable(string table, string word)
         {
-            int idFromTable = 0;
-            // SqliteCommand command = connection.CreateCommand();
+            int idFromTable = 0;         
             command.CommandText = $"select id from {table} where word ='{word}' COLLATE NOCASE;";
             using (var reader = command.ExecuteReader())
             {
@@ -284,7 +290,7 @@ namespace Dictionary
                 {
                     idFromTable = reader.GetInt32(0);
 
-                    Console.WriteLine($" {table}, { idFromTable }   !");
+                  
                 }
             }
             if (idFromTable == 0)
@@ -292,69 +298,27 @@ namespace Dictionary
             return idFromTable;
         }
 
-        static void mainF(string[] args)
+    }
+    public static class FileHelper
+    {
+        public static void CreateFile(string dirPath, string newFilenameWithoutExtension,string info)
         {
-            // string cs = "Data Source=:memory:";
-            //   string cs = "Data Source=/home/doka/database.db";
-            string cs = "Data Source=dictionary.db";
-
-            if (!File.Exists("dictionary.db"))
-            {
-                Console.WriteLine("Please, create DB and  tables ");
-                return;
-            }
+            newFilenameWithoutExtension += ".txt";
             try
             {
-
-                using (connection = new SqliteConnection(cs))
-                {
-                    connection.Open();
-                    command = connection.CreateCommand();
-
-                    Console.WriteLine(connection.ServerVersion);
-
-                  //  Insert("English", "Русский", "Help", "Спасение");
-
-
-                    //   var command = connection.CreateCommand();
-
-
-                    //    command.CommandText = createEnglishTable;//"SELECT id FROM dht";
-                    //    command.CommandText = creatRussianTable;//"SELECT id FROM dht";
-                    //  command.CommandText = createMidEnglishRussian;//"SELECT id FROM dht";
-
-                    // string eng = "Help";
-                    // string rus = "Помощ";
-
-                    // string getEngId = $"select id from  EnglishToRussian where word = '{eng}';";
-                    // string getRusId = $"select id from  RussianToEnglish where word = '{rus}';";
-
-                    //  string insertToMid = "insert into MidEnglishRussian (id_EnglishToRussian,id_RussianToEnglish) values (1,1);";
-
-                    // string qw = " select E.word,R.word from MidEnglishRussian as M,EnglishToRussian as E, RussianToEnglish as R where M.id_EnglishToRussian=E.id and M.id_RussianToEnglish=R.id;";
-
-                    //command.CommandText = createMidEnglishRussian;                      //    command.Parameters.AddWithValue("$id",1);
-                    // int rezult=  command.ExecuteNonQuery();
-
-                    //Console.WriteLine($"Hello, { rezult}!");
-                    // using (var reader = command.ExecuteReader())
-                    //{
-                    //     while (reader.Read())
-                    //     {
-                    //         var name = reader.GetInt32(0);
-
-                    //        Console.WriteLine($"Hello, { name}!");
-                    //    }
-                    //}
-                }
+              
+                var newFilenameWithPath = Path.Combine(dirPath, newFilenameWithoutExtension);
+                File.WriteAllText(newFilenameWithPath,info);
 
 
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine(e);              
+
             }
         }
 
     }
+
 }

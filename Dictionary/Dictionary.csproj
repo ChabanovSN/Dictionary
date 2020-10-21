@@ -150,7 +150,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SQLiteAsync.cs" />
     <Compile Include="SQLite.cs" />
-    <Compile Include="WainWindow.cs" />
+    <Compile Include="MainWindow.cs" />
     <Compile Include="DBHilper.cs" />
     <Compile Include="TranslationWindow.cs" />
   </ItemGroup>
